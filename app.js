@@ -4,6 +4,7 @@ const axios = require('axios');
 const auth=require('./middleware/auth')
 const User=require('./models/user')
 
+
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -135,6 +136,57 @@ app.get('/api/data', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
+
+
+
+
+// swagger 
+
+
+/**
+ * @swagger
+ * /api/data:
+ *   get:
+ *     summary: Retrieve data from a public API with filtering options
+ *     description: Fetch data from a public API (https://api.publicapis.org/entries) with filtering options based on category and result limit.
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter data by category
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Limit the number of results
+ *     responses:
+ *       '200':
+ *         description: Successful response with data from the public API
+ *       '500':
+ *         description: Internal Server Error
+ */
+
+
+app.get('/api/data', async (req, res) => {
+    try {
+        const { category, limit } = req.query;
+        const apiUrl = 'https://api.publicapis.org/entries';
+
+        const url = new URL(apiUrl);
+        if (category) url.searchParams.append('category', category);
+        if (limit) url.searchParams.append('limit', limit);
+
+        const response = await axios.get(url.toString());
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 
 const options = {
