@@ -1,30 +1,25 @@
-const express= require('express')
-const dotenv=require('dotenv').config()
+const express = require('express');
+const dotenv = require('dotenv').config();
 const axios = require('axios');
-const auth=require('./middleware/auth')
-const User=require('./models/user')
-
+const auth = require('./middleware/auth');
+const User = require('./models/user');
 
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
+require('./models/database/database').connect();
 
- require('./models/database/database').connect()
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
-const bcrypt=require('bcryptjs')
-const jwt =require('jsonwebtoken')
-const cookieParser = require('cookie-parser')
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
 
-const app=express();
-app.use(express.json())
-app.use(cookieParser())
-app.get('/',(req,res)=>{
-res.send("<h1> server is working </h1>")
-// console.log(db)
-})
-
-
-
+app.get('/', (req, res) => {
+    res.send("<h1> server is working </h1>");
+});
 
 app.post('/register', async (req, res) => {
     try {
@@ -65,11 +60,6 @@ app.post('/register', async (req, res) => {
     }
 });
 
-
-
-
-
-
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -108,43 +98,11 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/dashboard',auth,(req,res)=>
-{  
-    
-    res.send("welcome to my dashboard ")
-})
-
-
-
-app.get('/api/data', async (req, res) => {
-    try {
-        const { category, limit } = req.query;
-        const apiUrl = 'https://api.publicapis.org/entries';
-
-
-        const url = new URL(apiUrl);
-        if (category) url.searchParams.append('category', category);
-        if (limit) url.searchParams.append('limit', limit);
-
-        const response = await axios.get(url.toString());
-
-       
-        res.json(response.data);
-    } catch (error) {
-
-        console.error('Error fetching data:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+app.get('/dashboard', auth, (req, res) => {
+    res.send("welcome to my dashboard ");
 });
 
-
-
-
-
-
-// swagger 
-
-
+// Route to fetch data from a public API with filtering options
 /**
  * @swagger
  * /api/data:
@@ -168,8 +126,6 @@ app.get('/api/data', async (req, res) => {
  *       '500':
  *         description: Internal Server Error
  */
-
-
 app.get('/api/data', async (req, res) => {
     try {
         const { category, limit } = req.query;
@@ -187,43 +143,28 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-
-
+// Swagger setup
 const options = {
     swaggerDefinition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'Your API Documentation',
-        version: '1.0.0',
-        description: 'API endpoints documentation',
-      },
-      servers: [
-        {
-          url: 'http://localhost:4000', 
-          description: 'Development server',
+        openapi: '3.0.0',
+        info: {
+            title: 'Your API Documentation',
+            version: '1.0.0',
+            description: 'API endpoints documentation',
         },
-      ],
+        servers: [
+            {
+                url: 'http://localhost:4000',
+                description: 'Development server',
+            },
+        ],
     },
-    apis: ['./api/data'], 
-  };
-  
- 
-  const specs = swaggerJsdoc(options);
-  
-  
+    apis: ['./api/data'],
+};
 
-  const PORT = process.env.PORT || 3000;
-  
-  
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-  
-
-  app.get('/api/users', (req, res) => {
-
-    res.json({ message: 'Get all users' });
-  });
-  
+const specs = swaggerJsdoc(options);
 
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
- module.exports=app
+module.exports = app;
